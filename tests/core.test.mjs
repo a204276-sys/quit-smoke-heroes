@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { runInNewContext } from 'node:vm';
 import { HEROES } from '../js/heroes.js';
 import { DAY, calculateStats, earnedBadges, localInput, logSummary, MILESTONES, milestoneProgress } from '../js/stats.js';
 import { defaults, loadState, saveState, validConfig } from '../js/storage.js';
@@ -12,7 +13,7 @@ function memoryStorage(initial = {}) {
   return { getItem: key => map.get(key) ?? null, setItem: (key, value) => map.set(key, value) };
 }
 test('英雄台词和 SVG 与 git 初始原型完全一致', () => {
-  const original = execFileSync('git', ['show', 'HEAD:index.html'], { encoding: 'utf8' });
+  const original = execFileSync('git', ['show', '03bfe7b:index.html'], { encoding: 'utf8' });
   const data = original.match(/const HEROES = (\[[\s\S]*?\n\]);/)[1];
   const oldHeroes = Function(`return ${data}`)();
   assert.equal(HEROES.length, 11);
@@ -86,6 +87,7 @@ test('SOS 后台跳过五分钟后到期，结束一次且可再次打开', () =
 test('PWA 清单与静态资源引用完整，可部署到子目录', async () => {
   const manifest = JSON.parse(await readFile(new URL('../manifest.webmanifest', import.meta.url), 'utf8'));
   assert.equal(manifest.display, 'standalone'); assert.equal(manifest.start_url, './');
+  assert.equal(manifest.scope, './');
   assert(manifest.icons.some(icon => icon.type === 'image/svg+xml'));
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
@@ -93,4 +95,10 @@ test('PWA 清单与静态资源引用完整，可部署到子目录', async () =
   const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
   for (const match of app.matchAll(/\$\('([^']+)'\)/g)) assert(ids.includes(match[1]), `缺少 ${match[1]}`);
   for (const match of html.matchAll(/(?:href|src)="(\.\/[^"#]+)"/g)) await readFile(new URL(`../${match[1]}`, import.meta.url));
+  const fallback = html.match(/<script>\s*([\s\S]*?)<\/script>/)[1];
+  for (const protocol of ['file:', 'http:', 'https:']) {
+    const notice = { hidden: true };
+    runInNewContext(fallback, { location: { protocol }, document: { getElementById: () => notice } });
+    assert.equal(notice.hidden, protocol !== 'file:');
+  }
 });

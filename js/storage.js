@@ -15,6 +15,13 @@ function validLog(log) {
     log.triggers.every(t => TRIGGERS.includes(t)) && Number.isInteger(log.intensity) &&
     log.intensity >= 1 && log.intensity <= 5 && ['held', 'smoked'].includes(log.result);
 }
+// 本地读取和备份导入共用校验，避免导入绕过数据约束。
+export function validState(saved) {
+  return saved && saved.version === VERSION && validConfig(saved.config) &&
+    Array.isArray(saved.logs) && saved.logs.every(validLog) &&
+    saved.awards && typeof saved.awards === 'object' && !Array.isArray(saved.awards) &&
+    Object.values(saved.awards).every(a => a && typeof a.hero === 'string' && Number.isFinite(a.time));
+}
 // 保留旧 qs 数据：原型的 datetime-local 字符串按本地时区解释。
 export function loadState(storage = localStorage) {
   const state = defaults();
@@ -23,9 +30,7 @@ export function loadState(storage = localStorage) {
     if (raw) {
       const saved = JSON.parse(raw);
       if (saved.version !== VERSION) return { state, warning: '数据版本不受支持，暂用默认设置；原数据未覆盖。', writable: false };
-      if (!validConfig(saved.config) || !Array.isArray(saved.logs) || saved.logs.some(log => !validLog(log)) ||
-        !saved.awards || typeof saved.awards !== 'object' || Array.isArray(saved.awards) ||
-        Object.values(saved.awards).some(a => !a || typeof a.hero !== 'string' || !Number.isFinite(a.time))) {
+      if (!validState(saved)) {
         return { state, warning: '本地数据异常，暂用默认设置；原数据未覆盖。', writable: false };
       }
       return { state: saved, writable: true };

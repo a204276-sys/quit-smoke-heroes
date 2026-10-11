@@ -1,5 +1,5 @@
 import { HEROES } from './heroes.js';
-import { loadState, saveState, validConfig } from './storage.js';
+import { loadState, saveState, validConfig, validState } from './storage.js';
 import { localDayIndex, localInput, calculateStats, duration, TRIGGERS, MILESTONES,
   milestoneProgress, logSummary, BADGES, earnedBadges } from './stats.js';
 import { createSOS } from './sos.js';
@@ -187,7 +187,17 @@ function renderLogs() {
     details.textContent = `${log.triggers.join('、')} · 强度 ${log.intensity}/5`;
     const result = document.createElement('p');
     result.textContent = log.result === 'held' ? '💪 扛住了，又多一次经验' : '🌱 抽了，记下来再继续';
-    li.append(time, details, result);
+    const remove = document.createElement('button');
+    remove.textContent = '删除';
+    remove.setAttribute('aria-label', `删除 ${time.textContent} 的日志`);
+    remove.addEventListener('click', () => {
+      if (!confirm('确定删除这条日志？删除后无法恢复，已获得的徽章会保留。')) return;
+      state.logs = state.logs.filter(item => item !== log);
+      const saved = persist();
+      renderLogs();
+      toast(saved ? '日志已删除。' : '日志仅在本页删除，未保存到本地。');
+    });
+    li.append(time, details, result, remove);
     list.append(li);
   });
 }
@@ -222,7 +232,9 @@ $('log-form').addEventListener('submit', event => {
   }
   const button = $('log-form').querySelector('[type="submit"]');
   button.disabled = true;
-  state.logs.push({ id: crypto.randomUUID(), time, triggers, intensity, result });
+  // 局域网 HTTP 不提供 randomUUID，日志仍可正常保存。
+  const id = globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2);
+  state.logs.push({ id, time, triggers, intensity, result });
   const saved = persist();
   $('log-dialog').close();
   button.disabled = false;
@@ -246,6 +258,43 @@ $('confirm-restart').addEventListener('click', () => {
   $('restart-dialog').close();
   fillSettings(); tick();
   toast(saved ? '新一轮旅程开始了，之前的努力仍然属于你。' : '本页计时已重新开始，但未保存到本地。');
+});
+$('export-backup').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `quit-smoke-heroes-${localInput().slice(0, 10)}.json`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('备份已导出，请妥善保存 JSON 文件。');
+});
+$('import-backup').addEventListener('click', () => $('backup-file').click());
+$('backup-file').addEventListener('change', async () => {
+  const file = $('backup-file').files[0];
+  if (!file) return;
+  $('backup-error').textContent = '';
+  try {
+    const backup = JSON.parse(await file.text());
+    if (!validState(backup)) {
+      $('backup-error').textContent = '备份数据无效或版本不受支持，请选择本应用导出的有效 JSON 文件；当前数据未覆盖。';
+      return;
+    }
+    if (!confirm('导入备份会覆盖当前设置、日志和徽章，建议先导出备份。确定继续？')) return;
+    // 写入失败时保留当前页面数据；有效备份也可恢复损坏的本地数据。
+    if (!saveState(backup)) {
+      $('backup-error').textContent = '备份未能写入本地存储，请检查存储权限或空间；当前页面数据未覆盖。';
+      return;
+    }
+    state = backup; writable = true;
+    $('storage-warning').hidden = true;
+    fillSettings(); renderLogs(); tick();
+    toast('备份已导入。');
+  } catch {
+    $('backup-error').textContent = '无法读取备份，请选择有效的 JSON 文件；当前数据未覆盖。';
+  } finally {
+    $('backup-file').value = '';
+  }
 });
 window.addEventListener('hashchange', () => { route(); window.scrollTo(0, 0); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
@@ -272,7 +321,7 @@ async function registerOffline() {
     $('pwa-status').textContent = '此浏览器不支持离线缓存，请使用支持 PWA 的浏览器。'; return;
   }
   try {
-    await navigator.serviceWorker.register('./sw.js', { type: 'module' });
+    await navigator.serviceWorker.register('./sw.js');
     await navigator.serviceWorker.ready;
     $('pwa-status').textContent = '离线资源已就绪，断网也能继续记录。';
   } catch {

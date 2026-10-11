@@ -8,7 +8,8 @@ import { DAY, localInput } from '../js/stats.js';
 class Element {
   constructor() { this.listeners = {}; this.attributes = {}; this.children = []; this.style = { setProperty() {} }; this.dataset = {}; this.value = ''; this.open = false; }
   addEventListener(name, callback) { this.listeners[name] = callback; }
-  fire(name) { this.listeners[name]?.({ preventDefault() {} }); }
+  fire(name) { return this.listeners[name]?.({ preventDefault() {} }); }
+  click() { this.fire('click'); }
   setAttribute(name, value) { this.attributes[name] = value; }
   removeAttribute(name) { delete this.attributes[name]; }
   append(...children) { this.children.push(...children); }
@@ -32,9 +33,10 @@ test('入口交互：切换英雄、设置、日志、失误、二次确认、�
     addEventListener: (name, cb) => { docListeners[name] = cb; } };
   const map = new Map(); const state = defaults(); state.config.quit = Date.now() - 7 * DAY;
   map.set('quit-smoke-heroes', JSON.stringify(state));
+  let confirmed = false, writeFails = false;
   const replacements = { document, window: { addEventListener: (name, cb) => { winListeners[name] = cb; }, scrollTo() {} },
-    location: { current: '#home', get hash() { return this.current; }, set hash(value) { this.current = value.startsWith('#') ? value : '#' + value; } }, localStorage: { getItem: key => map.get(key) ?? null, setItem: (key, value) => map.set(key, value) },
-    Image: class extends Element {}, navigator: {}, setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {} };
+    location: { current: '#home', get hash() { return this.current; }, set hash(value) { this.current = value.startsWith('#') ? value : '#' + value; } }, localStorage: { getItem: key => map.get(key) ?? null, setItem: (key, value) => { if (writeFails) throw Error('quota'); map.set(key, value); } },
+    confirm: () => confirmed, crypto: {}, Image: class extends Element {}, navigator: {}, setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {} };
   const descriptors = Object.fromEntries(Object.keys(replacements).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
   try {
     for (const [key, value] of Object.entries(replacements)) Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
@@ -66,6 +68,43 @@ test('入口交互：切换英雄、设置、日志、失误、二次确认、�
     assert.equal(nodes.days.textContent, 0); assert.equal(nodes.quit.value, localInput(saved().config.quit));
     globalThis.location.hash = '#milestones'; winListeners.hashchange();
     assert.equal(nodes.timeline.children.length, 7); assert.equal(nodes.badges.children.length, 7);
+    assert.equal(new Set(saved().logs.map(log => log.id)).size, 2);
+    nodes['log-list'].children[0].children[3].fire('click');
+    assert.equal(saved().logs.length, 2);
+    confirmed = true;
+    nodes['log-list'].children[0].children[3].fire('click');
+    assert.equal(saved().logs.length, 1); assert.equal(nodes['log-total'].textContent, 1);
+    assert.equal(JSON.stringify(saved().awards), awards);
+    const beforeImport = map.get('quit-smoke-heroes');
+    const importText = async text => {
+      nodes['backup-file'].files = [{ async text() { return text; } }];
+      await nodes['backup-file'].fire('change');
+      assert.equal(nodes['backup-file'].value, '');
+    };
+    for (const invalid of ['{broken', 'null', JSON.stringify({ version: 99 }), JSON.stringify({ ...saved(), logs: [{ id: 'bad' }] })]) {
+      await importText(invalid);
+      assert(nodes['backup-error'].textContent.length > 0);
+      assert.equal(map.get('quit-smoke-heroes'), beforeImport);
+    }
+    const backup = defaults(); backup.config.price = 25;
+    confirmed = false; await importText(JSON.stringify(backup));
+    assert.equal(map.get('quit-smoke-heroes'), beforeImport);
+    confirmed = true; writeFails = true; await importText(JSON.stringify(backup));
+    assert.equal(map.get('quit-smoke-heroes'), beforeImport);
+    assert(nodes['backup-error'].textContent.includes('未能写入'));
+    writeFails = false; await importText(JSON.stringify(backup));
+    assert.equal(saved().config.price, 25); assert.equal(saved().logs.length, 0);
+    assert.equal(nodes.price.value, 25); assert.equal(nodes['log-total'].textContent, 0);
+    let exported, blob;
+    const originalCreate = URL.createObjectURL;
+    URL.createObjectURL = value => { blob = value; return 'blob:test'; };
+    const originalCreateElement = document.createElement;
+    document.createElement = () => { exported = new Element(); return exported; };
+    try {
+      nodes['export-backup'].fire('click');
+      assert.match(exported.download, /^quit-smoke-heroes-\d{4}-\d{2}-\d{2}\.json$/);
+      assert.deepEqual(JSON.parse(await blob.text()), saved());
+    } finally { URL.createObjectURL = originalCreate; document.createElement = originalCreateElement; }
   } finally {
     for (const [key, descriptor] of Object.entries(descriptors)) {
       if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key];
