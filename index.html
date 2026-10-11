@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>涵小弟的戒烟英雄殿</title>
+<style>
+  :root { --bg1:#111; --bg2:#333; --accent:#fff; --text:#fff; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    min-height: 100vh; color: var(--text);
+    background: radial-gradient(circle at 50% 0%, var(--bg2), var(--bg1) 70%);
+    transition: background .6s; display: flex; justify-content: center; padding: 20px 14px 40px;
+  }
+  .wrap { width: 100%; max-width: 440px; }
+  header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  header h1 { font-size: 18px; letter-spacing: 1px; }
+  header button, .btn {
+    background: rgba(255,255,255,.12); color: var(--text); border: 1px solid rgba(255,255,255,.25);
+    border-radius: 999px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+  }
+  .card {
+    background: rgba(0,0,0,.35); border: 2px solid var(--accent); border-radius: 22px;
+    padding: 22px 18px; text-align: center; box-shadow: 0 0 40px -10px var(--accent);
+  }
+  .tag { font-size: 12px; opacity: .75; letter-spacing: 2px; }
+  .emblem { width: 180px; height: 180px; margin: 10px auto 6px; filter: drop-shadow(0 0 18px var(--accent)); }
+  .name { font-size: 28px; font-weight: 900; color: var(--accent); letter-spacing: 2px; }
+  .sub { font-size: 13px; opacity: .7; margin-bottom: 14px; }
+  .quote { font-size: 17px; line-height: 1.7; padding: 0 6px; min-height: 60px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .stat { background: rgba(255,255,255,.08); border-radius: 14px; padding: 12px 4px; }
+  .stat b { display: block; font-size: 20px; color: var(--accent); }
+  .stat span { font-size: 12px; opacity: .7; }
+  .timer { margin-top: 16px; font-size: 15px; opacity: .9; }
+  .row { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+  .sos { background: var(--accent); color: #000; font-weight: 800; border: none; padding: 10px 22px; }
+  .roster { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 18px; }
+  .roster button { font-size: 12px; padding: 4px 10px; }
+  .roster button.on { background: var(--accent); color: #000; }
+  dialog { margin: auto; border: none; border-radius: 18px; padding: 20px; width: 90%; max-width: 380px; background: #1b1b1b; color: #fff; }
+  dialog::backdrop { background: rgba(0,0,0,.7); }
+  dialog label { display: block; font-size: 13px; margin: 10px 0 4px; opacity: .8; }
+  dialog input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #444; background: #000; color: #fff; }
+  .breath { width: 140px; height: 140px; border-radius: 50%; margin: 20px auto; background: var(--accent); opacity: .8; transition: transform 4s ease-in-out; }
+  .note { font-size: 11px; opacity: .45; text-align: center; margin-top: 22px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🚭 戒烟英雄殿</h1>
+    <button onclick="openSettings()">⚙ 设置</button>
+  </header>
+
+  <div class="card">
+    <div class="tag" id="tag">今日值班英雄</div>
+    <div class="emblem" id="emblem"></div>
+    <div class="name" id="name"></div>
+    <div class="sub" id="sub"></div>
+    <div class="quote" id="quote"></div>
+    <div class="timer" id="timer"></div>
+    <div class="stats">
+      <div class="stat"><b id="days">0</b><span>无烟天数</span></div>
+      <div class="stat"><b id="money">0</b><span>省下多少块</span></div>
+      <div class="stat"><b id="cigs">0</b><span>少抽的烟</span></div>
+    </div>
+    <div class="row">
+      <button class="btn sos" onclick="openSOS()">🆘 烟瘾来了</button>
+      <button class="btn" onclick="nextQuote()">🔄 再来一句</button>
+    </div>
+  </div>
+
+  <div class="roster" id="roster"></div>
+
+  <p class="note">
+    同人作品，仅供个人使用，与各角色版权方及真人本人无关。<br>
+    真人英雄的台词是本站写的致敬语，不是他们本人说过的话。<br>
+    戒断反应严重时，请找医生或戒烟门诊。
+  </p>
+</div>
+
+<dialog id="settings">
+  <h3>戒烟设置</h3>
+  <label>戒烟开始时间</label><input type="datetime-local" id="sQuit">
+  <label>以前每天抽几根</label><input type="number" id="sPerDay" min="1">
+  <label>每包价格 (块)</label><input type="number" id="sPrice" min="0" step="0.5">
+  <label>每包几根</label><input type="number" id="sPack" min="1">
+  <div class="row"><button class="btn" onclick="saveSettings()">保存</button></div>
+</dialog>
+
+<dialog id="sos">
+  <h3 style="text-align:center">跟着圆圈呼吸</h3>
+  <div class="breath" id="breath"></div>
+  <p style="text-align:center" id="breathText">吸气…</p>
+  <p style="text-align:center;font-size:28px;margin-top:8px" id="sosTimer">5:00</p>
+  <p style="text-align:center;font-size:14px;opacity:.8;margin-top:10px" id="sosQuote"></p>
+  <p style="text-align:center;font-size:12px;opacity:.6;margin-top:10px">烟瘾通常几分钟就会过去：先拖一拖、深呼吸、喝杯水、找点事做。</p>
+  <div class="row"><button class="btn" onclick="closeSOS()">我扛过去了 💪</button></div>
+</dialog>
+
+<script>
+// 每位英雄：配色、简化徽章 SVG（原创风格化图形，非官方形象）、台词
+const HEROES = [
+  { id:"doom", name:"DOOM", sub:"杜姆博士 · 拉特维亚君主", bg:["#06210f","#1f5c32"], accent:"#7dff9b",
+    svg:`<path d="M30 170 Q20 60 100 20 Q180 60 170 170 Z" fill="#1f6b35"/><rect x="55" y="55" width="90" height="110" rx="30" fill="#9aa3ab"/><rect x="68" y="88" width="24" height="8" fill="#111"/><rect x="108" y="88" width="24" height="8" fill="#111"/><rect x="96" y="100" width="8" height="40" fill="#6c757d"/><rect x="75" y="140" width="50" height="6" fill="#111"/>`,
+    quotes:["DOOM 从不向任何东西低头——尤其是一根小小的香烟。","这世上只有一个人有资格统治你：你自己。DOOM 批准你今天不抽。","弱者才需要尼古丁。DOOM 需要的只有意志。","今天的胜利，DOOM 记下了。明天，继续征服。"] },
+  { id:"gojo", name:"五条悟", sub:"最强咒术师", bg:["#0a0f2a","#2b4bd8"], accent:"#7fd4ff",
+    svg:`<polygon points="40,90 55,25 75,80 90,15 105,78 125,20 140,82 160,30 165,95" fill="#f2f6ff"/><circle cx="100" cy="115" r="58" fill="#f5d6c0"/><rect x="40" y="95" width="120" height="26" fill="#111"/><path d="M80 150 Q100 162 120 150" stroke="#a0522d" stroke-width="4" fill="none"/>`,
+    quotes:["放心吧，我是最强的。而你——今天也比香烟强。","无下限术式展开：烟瘾，一根手指都碰不到你。","烟瘾不过是只低级咒灵，祓除它。","比起抽烟，不如去吃甜点？我请客～"] },
+  { id:"jalapeno", name:"火爆辣椒", sub:"植物大战僵尸 · 一次性大招", bg:["#2a0500","#c42b00"], accent:"#ffb02e",
+    svg:`<path d="M100 20 Q115 10 120 30" stroke="#2e8b2e" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M80 40 Q140 30 135 100 Q130 170 95 185 Q60 170 65 100 Q60 50 80 40 Z" fill="#e01b1b"/><path d="M78 85 L95 95 M122 85 L105 95" stroke="#000" stroke-width="5"/><circle cx="88" cy="100" r="5"/><circle cx="112" cy="100" r="5"/><path d="M85 130 Q100 120 115 130" stroke="#000" stroke-width="5" fill="none"/>`,
+    quotes:["BOOM！一整排烟瘾，烧个精光！🔥","我这辈子只燃烧一次，但够用了。你也只需要扛过眼前这一次。","嘴里要冒火，也得是我这种火，别是烟。","僵尸来了不怕，烟瘾来了更不怕——轰！"] },
+  { id:"madara", name:"宇智波斑", sub:"火影忍者 · 宇智波传说", bg:["#120008","#5a0a1a"], accent:"#ff3b3b",
+    svg:`<circle cx="100" cy="100" r="80" fill="#c80000"/><circle cx="100" cy="100" r="50" fill="none" stroke="#000" stroke-width="5"/><circle cx="100" cy="100" r="16" fill="#000"/><g fill="#000"><circle cx="100" cy="50" r="10"/><circle cx="143" cy="125" r="10"/><circle cx="57" cy="125" r="10"/></g>`,
+    quotes:["醒醒吧，被香烟支配的世界才是真正的地狱。","想让我认真？那就让我看看，你的意志能撑多久。","须佐能乎在此，守护你的肺。","起舞吧——在没有烟的世界里。"] },
+  { id:"ronaldo", name:"C罗", sub:"Cristiano Ronaldo · 致敬", bg:["#2a0006","#b3001b"], accent:"#ffd23f",
+    svg:`<path d="M50 40 L80 25 Q100 40 120 25 L150 40 L180 75 L155 95 L150 180 L50 180 L45 95 L20 75 Z" fill="#d0021b"/><text x="100" y="140" text-anchor="middle" font-size="78" font-weight="900" fill="#ffd23f" font-family="Arial">7</text>`,
+    quotes:["他在发布会上把可乐挪开，举起一瓶水。今天，你把烟推开，也去喝杯水。","顶级的身体状态不是天生的，是每天的自律。今天无烟，就是你的一堂训练课。","又熬过一天——SIUUU！","射门要一次次练，戒烟也要一天天赢。"] },
+  { id:"eminem", name:"Eminem", sub:"Slim Shady · 致敬", bg:["#0d0d0d","#3a3a3a"], accent:"#e8e8e8",
+    svg:`<rect x="82" y="20" width="36" height="70" rx="18" fill="#cfcfcf"/><g stroke="#888" stroke-width="2"><line x1="84" y1="40" x2="116" y2="40"/><line x1="84" y1="55" x2="116" y2="55"/><line x1="84" y1="70" x2="116" y2="70"/></g><path d="M65 70 Q65 120 100 120 Q135 120 135 70" stroke="#e8e8e8" stroke-width="6" fill="none"/><rect x="96" y="120" width="8" height="45" fill="#e8e8e8"/><rect x="70" y="165" width="60" height="8" rx="4" fill="#e8e8e8"/>`,
+    quotes:["You only get one shot——别把它浪费在一根烟上。","他公开讲过自己戒掉依赖、保持清醒的经历。清醒，才写得出最狠的歌。","烟瘾想抢你的麦？Lose yourself，不是 lose to it。","今天的你，是 Real 的那一个。Stand up."] },
+  { id:"giannis", name:"字母哥", sub:"Giannis Antetokounmpo · 致敬", bg:["#00200f","#00471b"], accent:"#eee1c6",
+    svg:`<circle cx="100" cy="100" r="78" fill="#e56b1f"/><path d="M22 100 H178 M100 22 V178" stroke="#222" stroke-width="5"/><path d="M45 40 Q100 100 45 160 M155 40 Q100 100 155 160" stroke="#222" stroke-width="5" fill="none"/><text x="100" y="118" text-anchor="middle" font-size="52" font-weight="900" fill="#00471b" font-family="Arial">34</text>`,
+    quotes:["从雅典街头摆摊的孩子，到 NBA 总冠军和 MVP，靠的是一步一步来。戒烟也一样。","不想昨天，不想明天，只赢下今天这一回合。","Greek Freak 的体能来自日复一日的坚持，你的肺也值得这份尊重。","低头运球，一步一个脚印，冲向篮筐！"] },
+  { id:"bieber", name:"Justin Bieber", sub:"Biebs · 致敬", bg:["#1a0a2e","#6b2fb3"], accent:"#ff9ad5",
+    svg:`<path d="M100 170 L40 110 Q15 80 40 55 Q70 30 100 65 Q130 30 160 55 Q185 80 160 110 Z" fill="#c84bd8"/><path d="M90 70 V130 M90 70 L125 62 V120" stroke="#fff" stroke-width="7" fill="none"/><circle cx="80" cy="132" r="11" fill="#fff"/><circle cx="115" cy="122" r="11" fill="#fff"/>`,
+    quotes:["觉得自己戒不掉？Never say never.","烟瘾问你：Is it too late now to say sorry？——是的，太晚了，我们分手了。","把买烟的钱存起来，去看一场演唱会吧。","每天进步一点点，你就是自己的 superstar。"] },
+  { id:"ironman", name:"钢铁侠", sub:"Tony Stark", bg:["#2a0000","#9b1111"], accent:"#ffcc33",
+    svg:`<circle cx="100" cy="100" r="80" fill="#8a0d0d"/><circle cx="100" cy="100" r="58" fill="#ffcc33"/><circle cx="100" cy="100" r="40" fill="#1a1a1a"/><circle cx="100" cy="100" r="28" fill="#9ff3ff"/><circle cx="100" cy="100" r="12" fill="#fff"/>`,
+    quotes:["连钢铁侠的心脏都要靠反应堆撑着。你的肺，可没有备用件。","天才、富豪、慈善家——还有，无烟人士。今天你也是。","Jarvis，记录：主人又赢了一天。","我是钢铁侠。而你，是不抽烟的人。"] },
+  { id:"spiderman", name:"蜘蛛侠", sub:"友好邻居 Peter Parker", bg:["#00103a","#c8102e"], accent:"#ffffff",
+    svg:`<circle cx="100" cy="100" r="80" fill="#c8102e"/><g stroke="#000" stroke-width="2" fill="none"><circle cx="100" cy="100" r="25"/><circle cx="100" cy="100" r="50"/><circle cx="100" cy="100" r="75"/><line x1="100" y1="20" x2="100" y2="180"/><line x1="20" y1="100" x2="180" y2="100"/><line x1="43" y1="43" x2="157" y2="157"/><line x1="157" y1="43" x2="43" y2="157"/></g><path d="M50 85 Q60 60 88 90 Q65 100 50 85 Z M150 85 Q140 60 112 90 Q135 100 150 85 Z" fill="#fff" stroke="#000" stroke-width="4"/>`,
+    quotes:["能力越大，责任越大——第一份责任，是对自己的肺。","烟瘾来了？用蛛丝把它绑在路灯上，等警察来收。","蜘蛛感应提醒你：前方有烟瘾，绕道走！","你的友好邻居为你骄傲。"] },
+  { id:"thor", name:"雷神", sub:"Thor Odinson", bg:["#05122b","#1b3f8b"], accent:"#9fd1ff",
+    svg:`<polygon points="115,10 75,95 100,95 80,190 140,80 112,80 135,10" fill="#ffe14d"/><rect x="40" y="40" width="70" height="45" rx="6" fill="#8e9aa6"/><rect x="68" y="85" width="14" height="80" rx="5" fill="#6b3e1f"/>`,
+    quotes:["配得上举起雷神之锤的人，也配得上一副干净的肺。","我的雷电能劈开天空，你的意志能劈开烟瘾。","为阿斯加德而战！为你的肺而战！","烟瘾？Another!——不，这次说不。"] },
+];
+
+const DEFAULTS = { quit: new Date().toISOString().slice(0,16), perDay: 10, price: 17, pack: 20 };
+const load = () => ({ ...DEFAULTS, ...JSON.parse(localStorage.getItem("qs") || "{}") });
+let cfg = load();
+
+const dayIndex = () => Math.floor((Date.now() - new Date().getTimezoneOffset()*60000) / 86400000);
+let hero = HEROES[dayIndex() % HEROES.length];   // 每天自动换一位
+let quoteIdx = dayIndex() % 4;
+let isToday = true;
+
+function render() {
+  document.body.style.setProperty("--bg1", hero.bg[0]);
+  document.body.style.setProperty("--bg2", hero.bg[1]);
+  document.body.style.setProperty("--accent", hero.accent);
+  document.getElementById("tag").textContent = isToday ? "今日值班英雄" : "英雄串门中";
+  document.getElementById("emblem").innerHTML = `<svg viewBox="0 0 200 200">${hero.svg}</svg>`;
+  document.getElementById("name").textContent = hero.name;
+  document.getElementById("sub").textContent = hero.sub;
+  document.getElementById("quote").textContent = "“" + hero.quotes[quoteIdx % hero.quotes.length] + "”";
+  document.getElementById("roster").innerHTML = HEROES.map(h =>
+    `<button class="btn ${h.id === hero.id ? "on" : ""}" onclick="pick('${h.id}')">${h.name}</button>`).join("");
+  tick();
+}
+
+function tick() {
+  const ms = Math.max(0, Date.now() - new Date(cfg.quit).getTime());
+  const days = ms / 86400000;
+  const cigs = Math.floor(days * cfg.perDay);
+  document.getElementById("days").textContent = Math.floor(days);
+  document.getElementById("cigs").textContent = cigs;
+  document.getElementById("money").textContent = (cigs / cfg.pack * cfg.price).toFixed(1);
+  const h = Math.floor(ms / 3600000) % 24, m = Math.floor(ms / 60000) % 60, s = Math.floor(ms / 1000) % 60;
+  document.getElementById("timer").textContent = `已坚持 ${Math.floor(days)} 天 ${h} 时 ${m} 分 ${s} 秒`;
+}
+
+function pick(id) { hero = HEROES.find(h => h.id === id); isToday = hero === HEROES[dayIndex() % HEROES.length]; render(); }
+function nextQuote() { quoteIdx++; render(); }
+
+function openSettings() {
+  sQuit.value = cfg.quit; sPerDay.value = cfg.perDay; sPrice.value = cfg.price; sPack.value = cfg.pack;
+  settings.showModal();
+}
+function saveSettings() {
+  cfg = { quit: sQuit.value, perDay: +sPerDay.value, price: +sPrice.value, pack: +sPack.value };
+  localStorage.setItem("qs", JSON.stringify(cfg));
+  settings.close(); render();
+}
+
+let sosTimerId, breathId;
+function openSOS() {
+  sosQuote.textContent = hero.name + "：“" + hero.quotes[(quoteIdx + 1) % hero.quotes.length] + "”";
+  let left = 300, inhale = true;
+  const b = document.getElementById("breath");
+  const step = () => { b.style.transform = inhale ? "scale(1.3)" : "scale(.7)"; breathText.textContent = inhale ? "吸气…" : "呼气…"; inhale = !inhale; };
+  step(); breathId = setInterval(step, 4000);
+  sosTimer.textContent = "5:00";
+  sosTimerId = setInterval(() => {
+    left--; sosTimer.textContent = `${Math.floor(left/60)}:${String(left%60).padStart(2,"0")}`;
+    if (left <= 0) closeSOS();
+  }, 1000);
+  sos.showModal();
+}
+function closeSOS() { clearInterval(sosTimerId); clearInterval(breathId); sos.close(); }
+
+if (!localStorage.getItem("qs")) openSettings();
+render();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
