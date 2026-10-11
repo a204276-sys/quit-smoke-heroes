@@ -4,7 +4,40 @@ export const HEROES = [
     svg:`<path d="M30 170 Q20 60 100 20 Q180 60 170 170 Z" fill="#1f6b35"/><rect x="55" y="55" width="90" height="110" rx="30" fill="#9aa3ab"/><rect x="68" y="88" width="24" height="8" fill="#111"/><rect x="108" y="88" width="24" height="8" fill="#111"/><rect x="96" y="100" width="8" height="40" fill="#6c757d"/><rect x="75" y="140" width="50" height="6" fill="#111"/>`,
     quotes:["DOOM 从不向任何东西低头——尤其是一根小小的香烟。","这世上只有一个人有资格统治你：你自己。DOOM 批准你今天不抽。","弱者才需要尼古丁。DOOM 需要的只有意志。","今天的胜利，DOOM 记下了。明天，继续征服。"] },
   { id:"gojo", image:"", name:"五条悟", sub:"最强咒术师", bg:["#0a0f2a","#2b4bd8"], accent:"#7fd4ff",
-    svg:`<polygon points="40,90 55,25 75,80 90,15 105,78 125,20 140,82 160,30 165,95" fill="#f2f6ff"/><circle cx="100" cy="115" r="58" fill="#f5d6c0"/><rect x="40" y="95" width="120" height="26" fill="#111"/><path d="M80 150 Q100 162 120 150" stroke="#a0522d" stroke-width="4" fill="none"/>`,
+    svg:`<defs>
+      <radialGradient id="gojo-infinity"><stop stop-color="#7fd4ff" stop-opacity=".38"/><stop offset=".7" stop-color="#438dff" stop-opacity=".14"/><stop offset="1" stop-color="#438dff" stop-opacity="0"/></radialGradient>
+      <linearGradient id="gojo-hair" x1="0" y1="0" x2=".5" y2="1"><stop stop-color="#fff"/><stop offset=".55" stop-color="#eef5ff"/><stop offset="1" stop-color="#9aafcd"/></linearGradient>
+      <linearGradient id="gojo-skin" x1="0" y1="0" x2="1" y2=".6"><stop stop-color="#ffecdf"/><stop offset=".65" stop-color="#f0cbb9"/><stop offset="1" stop-color="#b98d87"/></linearGradient>
+      <linearGradient id="gojo-uniform" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#26354e"/><stop offset=".45" stop-color="#10192c"/><stop offset="1" stop-color="#050917"/></linearGradient>
+      <linearGradient id="gojo-blindfold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#293248"/><stop offset=".45" stop-color="#090f1d"/><stop offset="1" stop-color="#02050c"/></linearGradient>
+    </defs>
+    <circle cx="103" cy="96" r="94" fill="url(#gojo-infinity)"/>
+    <g fill="none" stroke="#7fd4ff">
+      <ellipse cx="102" cy="97" rx="79" ry="75" stroke-opacity=".22"/>
+      <path d="M25 112 C13 58 49 22 93 20 M122 24 C166 33 186 75 175 113 M168 134 C153 158 130 168 108 170" stroke-width="2" stroke-linecap="round" stroke-opacity=".6"/>
+      <path d="M18 127 C46 148 155 140 185 73" stroke-opacity=".25"/>
+    </g>
+    <g fill="#b9ecff"><path d="M27 69 L29 62 31 69 38 71 31 73 29 80 27 73 20 71Z"/><circle cx="173" cy="124" r="2"/><circle cx="151" cy="29" r="1.5"/></g>
+    <path d="M30 200 C31 175 50 169 73 160 L85 141 122 139 140 159 C167 169 179 181 184 200Z" fill="url(#gojo-uniform)" stroke="#080d1a" stroke-width="2"/>
+    <path d="M88 127 L87 154 Q104 166 124 149 L120 119Z" fill="url(#gojo-skin)"/>
+    <path d="M88 133 Q105 152 122 132 L121 145 Q104 160 88 149Z" fill="#8c6f78" opacity=".5"/>
+    <path d="M64 85 C53 78 52 91 58 102 L68 109 M137 79 C148 73 149 90 141 99 L134 102" fill="#d8ad9f" stroke="#483e50" stroke-width="1.5"/>
+    <path d="M64 69 C66 46 132 44 141 69 L137 107 C132 123 117 139 103 147 C89 143 72 128 67 112Z" fill="url(#gojo-skin)" stroke="#453c50" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M128 99 Q131 120 103 147 Q124 137 137 107 L139 94Z" fill="#a77f81" opacity=".45"/>
+    <path d="M103 103 L99 116 106 118" fill="none" stroke="#ac7e78" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M90 127 Q102 132 115 124 Q105 136 95 131Z" fill="#fff1e5"/>
+    <path d="M90 127 Q102 131 115 124" fill="none" stroke="#795762" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M99 137 L105 138" stroke="#c49891" stroke-linecap="round"/>
+    <path d="M59 80 Q96 85 143 72 L143 95 Q104 113 63 103 Q59 92 59 80Z" fill="url(#gojo-blindfold)" stroke="#060b16" stroke-width="2"/>
+    <path d="M63 83 Q95 91 137 78 M66 99 Q98 107 136 93" fill="none" stroke="#5f7396" stroke-opacity=".45" stroke-width="1.2"/>
+    <path d="M124 83 L140 78 137 92Z" fill="#3a4963" opacity=".35"/>
+    <path d="M56 93 C49 82 46 72 42 65 Q51 68 57 67 C48 57 46 48 45 41 Q55 47 66 47 C58 37 59 26 58 22 Q71 34 81 35 C77 24 82 12 86 7 Q89 23 99 29 C103 18 114 9 124 6 Q117 22 121 32 C132 22 142 20 153 20 Q141 33 140 44 Q151 36 166 38 C157 46 155 55 154 60 Q166 56 175 60 C163 66 158 73 151 85 L140 92 139 73 Q129 79 120 78 L125 62 Q114 76 99 83 Q103 72 101 63 Q87 83 76 89 L77 71 Q68 84 56 93Z" fill="url(#gojo-hair)" stroke="#33455f" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M58 22 Q68 46 83 52 Q72 49 66 47 M86 7 Q82 35 99 46 Q90 37 81 35 M124 6 Q103 34 108 55 Q112 42 121 32 M153 20 Q126 42 125 62 M166 38 Q144 55 139 73 M45 41 Q57 60 77 61 Q68 56 57 67" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+    <path d="M61 78 Q71 67 80 56 Q81 72 76 89 M87 73 Q98 60 101 48 Q110 63 99 83 M117 70 Q130 55 136 45 Q135 65 120 78 M147 64 Q156 59 161 58" fill="none" stroke="#8ba2c3" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M72 142 L86 139 Q91 159 104 168 Q115 157 126 136 L141 141 139 172 112 193 81 174Z" fill="url(#gojo-uniform)" stroke="#070c19" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M73 143 L83 146 Q89 163 104 174 M128 140 L136 144 134 166 112 185" fill="none" stroke="#7fd4ff" stroke-opacity=".45" stroke-width="1.5"/>
+    <path d="M104 174 L112 193 112 200 M52 181 L73 171 M145 176 L165 186" fill="none" stroke="#384762" stroke-width="1.5"/>
+    <circle cx="117" cy="184" r="2.2" fill="#879cb9"/><circle cx="117" cy="184" r=".8" fill="#d8efff"/>`,
     quotes:["放心吧，我是最强的。而你——今天也比香烟强。","无下限术式展开：烟瘾，一根手指都碰不到你。","烟瘾不过是只低级咒灵，祓除它。","比起抽烟，不如去吃甜点？我请客～"] },
   { id:"jalapeno", image:"", name:"火爆辣椒", sub:"植物大战僵尸 · 一次性大招", bg:["#2a0500","#c42b00"], accent:"#ffb02e",
     svg:`<path d="M100 20 Q115 10 120 30" stroke="#2e8b2e" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M80 40 Q140 30 135 100 Q130 170 95 185 Q60 170 65 100 Q60 50 80 40 Z" fill="#e01b1b"/><path d="M78 85 L95 95 M122 85 L105 95" stroke="#000" stroke-width="5"/><circle cx="88" cy="100" r="5"/><circle cx="112" cy="100" r="5"/><path d="M85 130 Q100 120 115 130" stroke="#000" stroke-width="5" fill="none"/>`,

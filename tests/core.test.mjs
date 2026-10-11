@@ -18,7 +18,12 @@ test('英雄台词和 SVG 与 git 初始原型完全一致', () => {
   const oldHeroes = Function(`return ${data}`)();
   assert.equal(HEROES.length, 11);
   assert.equal(HEROES.reduce((total, h) => total + h.quotes.length, 0), 44);
-  assert.deepEqual(HEROES.map(({ image, ...h }) => h), oldHeroes);
+  // Only Gojo's redesigned SVG is exempt; all other prototype fields stay exact.
+  const prototypeFields = ({ image, ...hero }) => {
+    if (hero.id === 'gojo') { const { svg, ...fields } = hero; return fields; }
+    return hero;
+  };
+  assert.deepEqual(HEROES.map(prototypeFields), oldHeroes.map(prototypeFields));
 });
 test('统计按时间戳计算，边界、金额与成就阈值正确', () => {
   const config = { quit: 1000, perDay: 10, price: 17, pack: 20 };
