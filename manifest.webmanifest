@@ -1,0 +1,14 @@
+{
+  "name": "涵小弟的戒烟英雄殿",
+  "short_name": "戒烟英雄殿",
+  "description": "每天一位英雄，陪你走向无烟生活。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#06210f",
+  "theme_color": "#06210f",
+  "icons": [
+    { "src": "./icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
