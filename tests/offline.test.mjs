@@ -56,7 +56,7 @@ test('HTTP 资源与 SW 缓存：首次安装、离线命中、导航回退、�
       const response = await pending; assert.equal(response.status, 200); assert((await response.text()).length > 0);
     }
     listeners.fetch({ request: { url: origin + '/unknown-page', method: 'GET', mode: 'navigate' }, respondWith(promise) { pending = promise; } });
-    assert((await (await pending).text()).includes('戒烟英雄殿'));
+    assert((await (await pending).text()).includes('戒烟日记'));
     let intercepted = false;
     listeners.fetch({ request: { url: 'https://www.who.int/', method: 'GET' }, respondWith() { intercepted = true; } });
     assert.equal(intercepted, false);

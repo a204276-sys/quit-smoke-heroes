@@ -12,18 +12,25 @@ function memoryStorage(initial = {}) {
   const map = new Map(Object.entries(initial));
   return { getItem: key => map.get(key) ?? null, setItem: (key, value) => map.set(key, value) };
 }
-test('英雄台词和 SVG 与 git 初始原型完全一致', () => {
+test('英雄台词与 git 初始原型一致，SVG 已全部重绘', () => {
   const original = execFileSync('git', ['show', '03bfe7b:index.html'], { encoding: 'utf8' });
   const data = original.match(/const HEROES = (\[[\s\S]*?\n\]);/)[1];
   const oldHeroes = Function(`return ${data}`)();
   assert.equal(HEROES.length, 11);
   assert.equal(HEROES.reduce((total, h) => total + h.quotes.length, 0), 44);
-  // Only Gojo's redesigned SVG is exempt; all other prototype fields stay exact.
-  const prototypeFields = ({ image, ...hero }) => {
-    if (hero.id === 'gojo') { const { svg, ...fields } = hero; return fields; }
-    return hero;
-  };
+  // 所有 SVG 均已重绘，其余原型字段保持不变。
+  const prototypeFields = ({ image, svg, ...hero }) => hero;
   assert.deepEqual(HEROES.map(prototypeFields), oldHeroes.map(prototypeFields));
+  // 重绘后的 SVG 不再用 <text>（字体不可控）；defs 里的 id 跨英雄不能重复，避免同页冲突。
+  const seen = new Map();
+  for (const hero of HEROES) {
+    assert(hero.svg.length > 500, `${hero.id} SVG 过于简单`);
+    assert(!hero.svg.includes('<text'), `${hero.id} SVG 不应包含 <text>`);
+    for (const [, id] of hero.svg.matchAll(/\sid="([^"]+)"/g)) {
+      assert(!seen.has(id) || seen.get(id) === hero.id, `${hero.id} 与 ${seen.get(id)} 的 id "${id}" 重复`);
+      seen.set(id, hero.id);
+    }
+  }
 });
 test('统计按时间戳计算，边界、金额与成就阈值正确', () => {
   const config = { quit: 1000, perDay: 10, price: 17, pack: 20 };
